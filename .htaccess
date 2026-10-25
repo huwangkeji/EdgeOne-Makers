@@ -1,0 +1,29 @@
+# ===== 云雀 AI 检测助手 · Apache 安全规则 =====
+# 目的：阻止直接下载敏感目录/文件（data/ 含明文 Token、密码哈希、监控密钥；lib/ 含源码；config.php 含配置）。
+
+# 关闭目录列表
+Options -Indexes
+
+# 禁止访问 data/ 与 lib/
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(?:data|lib)/ - [F,L]
+</IfModule>
+
+# 禁止直接访问 config.php 与 cacert.pem（config.php 只能被其它 PHP 内部 require）
+<FilesMatch "^(config\.php|cacert\.pem)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# 常见安全响应头
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

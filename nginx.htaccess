@@ -1,0 +1,31 @@
+# =====================================================================
+# Nginx 部署安全片段（Nginx 不读取 .htaccess，需合并到站点 server{} 配置）
+# 目的：阻止直接下载 data/、lib/、config.php、cacert.pem 等敏感内容。
+# 部署后务必执行： nginx -t && nginx -s reload
+# =====================================================================
+
+# 1) 拒绝直接访问数据目录与源码目录
+location ~ ^/(data|lib)/ {
+    deny all;
+    return 404;
+}
+
+# 2) 拒绝直接访问 config.php（仅允许 PHP 内部 require，不对外）
+location = /config.php {
+    deny all;
+    return 404;
+}
+
+# 3) 拒绝直接下载证书与 JSON 数据文件
+location ~* \.(?:json|pem)$ {
+    deny all;
+    return 404;
+}
+
+# 4) 关闭目录列表（默认即关闭，显式声明更稳妥）
+autoindex off;
+
+# 5) 常用安全响应头
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
